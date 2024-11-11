@@ -1,0 +1,96 @@
+package kafkaApp;
+
+
+
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.BinaryDecoder;
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.Properties;
+
+@Service
+@EnableKafka
+public class KafkaMessageProcessor {
+
+    @Autowired
+    private KafkaTemplate<String, byte[]> kafkaTemplate;
+
+    private static final String TARGET_TOPIC = "loadtopic"; // Целевой топик
+    private static final String SOURCE_TOPIC = "test"; // Исходный топик
+    private static final long DELAY_MS = 500; // Задержка в 500 мс
+
+    // Схема Avro для сообщения
+    private static final String AVRO_SCHEMA = 
+        "{\"type\":\"record\",\"name\":\"Value\",\"namespace\":\"dev.test.xk6.kafka\"," +
+        "\"fields\":[{\"name\":\"name\",\"type\":\"string\"}]}";
+    
+    private final Schema schema;
+
+    public KafkaMessageProcessor() {
+        // Парсим схему для использования в десериализации
+        this.schema = new Schema.Parser().parse(AVRO_SCHEMA);
+    }
+
+    @KafkaListener(topics = SOURCE_TOPIC, groupId = "test-group")
+    public void listen(byte[] message) {
+        try {
+            // Десериализация Avro-сообщения
+            GenericRecord record = deserializeAvroMessage(message);
+            String name = record.get("name").toString(); // Извлекаем поле "name"
+            System.out.println("Received Avro message: " + name);
+
+            // Добавляем задержку перед отправкой сообщения в целевой топик
+            Thread.sleep(DELAY_MS);
+
+            // Преобразуем сообщение и отправляем обратно в Kafka
+            String transformedMessage = "Computer name - " + name;
+            byte[] transformedMessageBytes = serializeAvroMessage(transformedMessage);
+
+            // Отправка сообщения в целевой топик
+            kafkaTemplate.send(TARGET_TOPIC, transformedMessageBytes);
+            System.out.println("Sent Avro message to target topic: " + transformedMessage);
+
+        } catch (Exception e) {
+            System.err.println("Error processing Avro message: " + e.getMessage());
+        }
+    }
+
+    // Десериализация Avro-сообщения
+    private GenericRecord deserializeAvroMessage(byte[] message) throws Exception {
+        ByteArrayInputStream in = new ByteArrayInputStream(message);
+        DatumReader<GenericRecord> reader = new org.apache.avro.specific.SpecificDatumReader<>(schema);
+        BinaryDecoder decoder = DecoderFactory.get().directBinaryDecoder(in, null);
+        return reader.read(null, decoder);
+    }
+
+    // Сериализация строки в Avro-сообщение
+    private byte[] serializeAvroMessage(String message) throws Exception {
+        GenericRecord record = new GenericData.Record(schema);
+        record.put("name", message);
+
+        // Сериализация в байты
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        org.apache.avro.io.DatumWriter<GenericRecord> writer = new org.apache.avro.specific.SpecificDatumWriter<>(schema);
+        BinaryEncoder encoder = org.apache.avro.io.EncoderFactory.get().directBinaryEncoder(out, null);
+        writer.write(record, encoder);
+        encoder.flush();
+        return out.toByteArray();
+    }
+}

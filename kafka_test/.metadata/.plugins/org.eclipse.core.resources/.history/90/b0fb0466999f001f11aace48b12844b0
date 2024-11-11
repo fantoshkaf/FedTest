@@ -1,0 +1,45 @@
+package kafkaApp;
+
+
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+
+@Service
+public class KafkaMessageProcessor {
+
+    private static final String SCHEMA_STRING = "{\n" +
+            "  \"type\": \"record\",\n" +
+            "  \"name\": \"Value\",\n" +
+            "  \"namespace\": \"dev.test.xk6.kafka\",\n" +
+            "  \"fields\": [\n" +
+            "    {\n" +
+            "      \"name\": \"name\",\n" +
+            "      \"type\": \"string\"\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}";
+
+    private static final Schema SCHEMA = new Schema.Parser().parse(SCHEMA_STRING);
+
+    @KafkaListener(topics = "my-topic", groupId = "my-group")
+    public void listen(ConsumerRecord<String, byte[]> record) throws IOException {
+        // Deserialize Avro data
+        byte[] messageBytes = record.value();
+        
+        // Create a datum reader with the provided schema
+        DatumReader<GenericRecord> datumReader = new SpecificDatumReader<>(SCHEMA);
+        
+        // Decode the Avro byte array
+        GenericRecord genericRecord = datumReader.read(null, DecoderFactory.get().binaryDecoder(messageBytes, null));
+        
+        // Access the fields
+        String field1 = genericRecord.get("field1").toString();
+        int field2 = (int) genericRecord.get("field2");
+        
+        System.out.println("Received message: field1=" + field1 + ", field2=" + field2);
+    }
+}

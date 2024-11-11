@@ -1,0 +1,11 @@
+{
+  type: "record",
+  name: "Value",
+  namespace: "dev.test.xk6.kafka",
+  fields: [
+    {
+      name: "name",
+      type: "string",
+    },
+  ],
+}

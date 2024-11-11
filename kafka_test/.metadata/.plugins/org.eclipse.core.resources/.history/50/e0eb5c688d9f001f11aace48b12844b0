@@ -1,0 +1,54 @@
+package kafkaApp;
+
+
+
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+
+@Service
+public class KafkaMessageProcessor {
+
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    private static final String TARGET_TOPIC = "loadtopic"; // Целевой топик
+    private static final String SOURCE_TOPIC = "test"; // Исходный топик
+    private static final long DELAY_MS = 500; // Задержка в 500 мс
+    private static List<scheme> deserializePersons(File personListSerializedFile) throws IOException {
+    	  DatumReader<Person> personDatumReader = new SpecificDatumReader<>(Person.class);
+    	  DataFileReader<Person> dataFileReader = new DataFileReader<>(personListSerializedFile, personDatumReader);
+    	  Person person = null;
+    	  List<Person> persons = new ArrayList<>();
+    	  // Reuse person object by passing it to next(). This saves us from allocating and garbage collecting many objects for files with many items.
+    	  while (dataFileReader.hasNext()) {
+    	    person = dataFileReader.next(person);
+    	    persons.add(person);
+    	  }
+    	  dataFileReader.close();
+    	  return persons;
+    	}
+    @KafkaListener(topics = SOURCE_TOPIC, groupId = "test-group")
+    public void listen(String message) {
+        System.out.println("Received message: " + message);
+
+        try {
+            // Добавляем задержку перед отправкой сообщения в целевой топик
+            Thread.sleep(DELAY_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Восстановление состояния прерывания потока
+            System.err.println("Thread was interrupted: " + e.getMessage());
+        }
+
+        // Формируем новое сообщение с префиксом
+        String transformedMessage = "Computer name - " + message;
+
+        // Отправка сообщения в целевой топик
+        kafkaTemplate.send(TARGET_TOPIC, transformedMessage);
+        System.out.println("Sent message to target topic: " + transformedMessage);
+    }
+}

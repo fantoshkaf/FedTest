@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Delete resource &apos;kafka-consumer/src/test/resources/Schema.avsc&apos;" deleteContents="false" description="Delete resource &apos;kafka-consumer/src/test/resources/Schema.avsc&apos;" element1="/kafka-consumer/src/test/resources/Schema.avsc" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1731266787919"/>
+</session>

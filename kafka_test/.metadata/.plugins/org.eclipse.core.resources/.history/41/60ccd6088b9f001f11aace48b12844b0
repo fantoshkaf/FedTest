@@ -1,0 +1,47 @@
+package kafkaApp;
+
+
+
+
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.util.ResourceUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+public class KafkaMessageProcessor {
+
+    private Schema schema;
+
+    public KafkaMessageProcessor() {
+        try {
+            // Загружаем схему из ресурсов
+            File schemaFile = ResourceUtils.getFile("classpath:scheme.avsc");
+            FileInputStream schemaInputStream = new FileInputStream(schemaFile);
+            this.schema = new Schema.Parser().parse(schemaInputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @KafkaListener(topics = "test", groupId = "test-group")
+    public void listen(ConsumerRecord<String, byte[]> record) {
+        byte[] message = record.value();
+        try {
+            // Десериализация Avro сообщения с использованием схемы
+            GenericDatumReader<GenericRecord> reader = new GenericDatumReader<>(schema);
+            GenericRecord genericRecord = reader.read(null, DecoderFactory.get().binaryDecoder(message, null));
+
+            // Обработка десериализованного сообщения
+            System.out.println("Deserialized message: " + genericRecord);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

@@ -1,0 +1,7 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:29092
+    consumer:
+      group-id: test-group
+    listener:
+      missing-topics-fatal: false

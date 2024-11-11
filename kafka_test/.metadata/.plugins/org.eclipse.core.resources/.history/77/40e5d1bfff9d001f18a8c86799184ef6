@@ -1,0 +1,61 @@
+package kafkaApp;
+
+
+
+
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+
+@Service
+public class KafkaMessageProcessor {
+
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    @Autowired
+    private MeterRegistry meterRegistry; // Для добавления метрик
+
+    private static final String TARGET_TOPIC = "loadtopic"; // Целевой топик
+    private static final String SOURCE_TOPIC = "test"; // Исходный топик
+    private static final long DELAY_MS = 500; // Задержка в 500 мс
+
+    // Счетчик для количества сообщений
+    private static final String MESSAGE_COUNTER_NAME = "kafka_message_count";
+    // Таймер для измерения времени обработки
+    private static final String MESSAGE_TIMER_NAME = "kafka_message_processing_time";
+
+    @KafkaListener(topics = SOURCE_TOPIC, groupId = "test-group")
+    public void listen(String message) {
+    	
+        // Увеличиваем счетчик сообщений
+        meterRegistry.counter(MESSAGE_COUNTER_NAME, "topic", SOURCE_TOPIC).increment();
+        
+        // Начинаем таймер для измерения времени обработки
+        Timer.Sample sample = Timer.start(meterRegistry);
+        
+        System.out.println("Received message: " + message);
+
+        try {
+            // Добавляем задержку перед отправкой сообщения в целевой топик
+            Thread.sleep(DELAY_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Восстановление состояния прерывания потока
+            System.err.println("Thread was interrupted: " + e.getMessage());
+        }
+
+        // Формируем новое сообщение с префиксом
+        String transformedMessage = "Computer name - " + message;
+
+        // Отправка сообщения в целевой топик
+        kafkaTemplate.send(TARGET_TOPIC, transformedMessage);
+        System.out.println("Sent message to target topic: " + transformedMessage);
+
+        // Заканчиваем таймер и записываем время обработки
+        sample.stop(meterRegistry.timer(MESSAGE_TIMER_NAME, "topic", TARGET_TOPIC));
+    }
+}

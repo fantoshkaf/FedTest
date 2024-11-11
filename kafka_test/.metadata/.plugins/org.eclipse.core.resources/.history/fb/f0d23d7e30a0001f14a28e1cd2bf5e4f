@@ -1,0 +1,29 @@
+package kafkaApp;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+@Component
+public class KafkaMetricsConfig {
+
+    @Autowired
+    public KafkaMetricsConfig(MeterRegistry meterRegistry) {
+        meterRegistry.gauge("kafka.request.count", this, KafkaMetricsConfig::getRequestCount);
+        meterRegistry.gauge("kafka.error.count", this, KafkaMetricsConfig::getErrorCount);
+        meterRegistry.gauge("kafka.average.request.time", this, KafkaMetricsConfig::getAverageRequestTime);
+    }
+
+    private double getRequestCount() {
+        // Логика для получения количества запросов
+        return 100; // Заглушка
+    }
+
+    private double getErrorCount() {
+        // Логика для получения количества ошибок
+        return 5; // Заглушка
+    }
+
+    private double getAverageRequestTime() {
+        // Логика для вычисления среднего времени выполнения запроса
+        return 200; // Заглушка
+    }
+}

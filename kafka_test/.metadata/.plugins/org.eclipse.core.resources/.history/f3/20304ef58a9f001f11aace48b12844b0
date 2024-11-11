@@ -1,0 +1,35 @@
+package kafkaApp;
+
+
+
+
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.KafkaListener;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+
+public class KafkaMessageProcessor {
+
+    private static final String SCHEMA_JSON = "{...}"; // Вставьте сюда вашу схему Avro в формате JSON
+    private static final Schema SCHEMA = new Schema.Parser().parse(SCHEMA_JSON);
+
+    @KafkaListener(topics = "test", groupId = "test-group")
+    public void listen(ConsumerRecord<String, byte[]> record) {
+        byte[] message = record.value();
+        try {
+            // Десериализация Avro сообщения
+            GenericDatumReader<GenericRecord> reader = new GenericDatumReader<>(SCHEMA);
+            GenericRecord genericRecord = reader.read(null, DecoderFactory.get().binaryDecoder(message, null));
+            
+            // Работайте с данными в genericRecord
+            System.out.println("Deserialized message: " + genericRecord);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

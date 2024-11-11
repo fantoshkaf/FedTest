@@ -1,0 +1,25 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:29092
+    consumer:
+      group-id: test-group
+      auto-offset-reset: earliest
+      key-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+    listener:
+      missing-topics-fatal: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true

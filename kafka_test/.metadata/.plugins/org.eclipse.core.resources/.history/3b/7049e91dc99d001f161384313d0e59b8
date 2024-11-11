@@ -1,0 +1,5 @@
+package kafkaWirter;
+
+public class KafkaConsumerApplication {
+
+}

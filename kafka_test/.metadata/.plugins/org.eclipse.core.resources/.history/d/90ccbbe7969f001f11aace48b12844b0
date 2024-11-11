@@ -1,0 +1,55 @@
+package kafkaApp;
+import org.apache.avro.Schema;
+import org.apache.avro.specific.SpecificRecordBase;
+public class ValueSchema extends SpecificRecordBase {
+
+    public static final Schema SCHEMA$ = new Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Value\",\"namespace\":\"dev.test.xk6.kafka\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"}]}");
+
+    private CharSequence name;
+
+    // Конструктор по умолчанию
+    public ValueSchema() {
+    }
+
+    // Конструктор с параметром
+    public ValueSchema(CharSequence name) {
+        this.name = name;
+    }
+
+    // Геттер для поля name
+    public CharSequence getName() {
+        return name;
+    }
+
+    // Сеттер для поля name
+    public void setName(CharSequence name) {
+        this.name = name;
+    }
+
+    @Override
+    public Schema getSchema() {
+        return SCHEMA$;
+    }
+
+    @Override
+    public Object get(int field$) {
+        if (field$ == 0) {
+            return name;
+        }
+        throw new IndexOutOfBoundsException("Invalid field index");
+    }
+
+    @Override
+    public void put(int field$, Object value) {
+        if (field$ == 0) {
+            this.name = (CharSequence) value;
+        } else {
+            throw new IndexOutOfBoundsException("Invalid field index");
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Value{name=" + name + "}";
+    }
+}

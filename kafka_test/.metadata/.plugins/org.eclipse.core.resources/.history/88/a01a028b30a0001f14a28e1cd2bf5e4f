@@ -1,0 +1,50 @@
+package kafkaApp;
+
+
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+
+@Service
+public class KafkaMessageProcessor {
+
+    @Autowired
+    private MeterRegistry meterRegistry;
+
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    private static final String TARGET_TOPIC = "loadtopic"; // Целевой топик
+    private static final String SOURCE_TOPIC = "test"; // Исходный топик
+    private static final long DELAY_MS = 1; // Задержка в мс
+
+    @KafkaListener(topics = SOURCE_TOPIC, groupId = "test-group")
+    public void listen(String message) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+
+        try {
+            System.out.println("Полученное сообщение: " + message);
+            Thread.sleep(DELAY_MS);
+
+            // новое сообщение с префиксом
+            String transformedMessage = "Computer name - " + message;
+
+            // Отправка сообщения в целевой топик
+            kafkaTemplate.send(TARGET_TOPIC, transformedMessage);
+            System.out.println("Sent message to target topic: " + transformedMessage);
+
+            meterRegistry.counter("kafka.messages.processed").increment();
+        } catch (Exception e) {
+            meterRegistry.counter("kafka.errors").increment();
+            System.err.println("Произошла ошибка");
+        } finally {
+            sample.stop(meterRegistry.timer("kafka.processing.time"));
+        }
+    }
+}

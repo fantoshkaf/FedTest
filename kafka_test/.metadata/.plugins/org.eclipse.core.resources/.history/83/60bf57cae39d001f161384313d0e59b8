@@ -1,0 +1,42 @@
+package kafkaApp;
+
+import org.apache.avro.generic.GenericRecord;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.MessageListener;
+import org.springframework.kafka.listener.MessageListenerContainer;
+import org.springframework.kafka.listener.config.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.config.MessageListenerContainerConfigurer;
+import org.springframework.kafka.listener.config.SimpleMessageListenerContainer;
+import org.springframework.kafka.listener.MessageListener;
+import org.springframework.kafka.listener.MessageListenerContainer;
+import org.springframework.kafka.listener.MessageListener;
+
+@Service
+public class KafkaMessageProcessor {
+
+    @Autowired
+    private KafkaTemplate<String, byte[]> kafkaTemplate;  // Assuming Avro serialized data
+
+    private static final String TARGET_TOPIC = "loadtopic";
+
+    @KafkaListener(topics = "test", groupId = "test-group")
+    public void listen(byte[] message) {
+        // Deserialize Avro data
+        // Assuming you have some Avro deserialization logic here
+        // Avro deserialization should convert byte[] to a Java object
+
+        String messageString = new String(message); // Replace with actual Avro deserialization
+
+        System.out.println("Received message: " + messageString);
+
+        // Send message to another topic
+        kafkaTemplate.send(TARGET_TOPIC, "Computer name - " + messageString);
+        System.out.println("Sent message to target topic: " + messageString);
+    }
+}
