@@ -51,10 +51,7 @@ export default function () {
     writer.produce({
       messages: [
           {
-          key: schemaRegistry.serialize({
-              data: "my-key",
-              schemaType: SCHEMA_TYPE_STRING,
-          }),
+
           value: schemaRegistry.serialize({
               data: computerName[1],
               schemaType: SCHEMA_TYPE_STRING,
